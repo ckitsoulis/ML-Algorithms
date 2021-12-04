@@ -1,23 +1,33 @@
 import numpy as np
 import random
-from sklearn.datasets import make_blobs
 from scipy.stats import multivariate_normal
+from KMeans import *
 
-def generate_initial_parameters(data, k):
-    N, D = np.shape(data)[0], np.shape(data)[1]
-    Pi = np.ones(k)/k
-    d_means = np.zeros(shape=(k,D))
-    
+#===============================================================================================================
+#===============================================================================================================
+
+def generate_means(data, k):
+    N, D = data.shape[0], data.shape[1]
+
+    init_means = np.zeros(shape=(k,D))
     initials = np.random.randint(0, N, k)
 
     for ind in range(len(initials)):
-        d_means[ind,:] = data[ind,:]
+        init_means[ind,:] = data[ind,:]
+    return init_means
 
+def generate_sigma(data, k):
+    D = data.shape[1]
     covariances = [np.eye(D) for i in range(k)]
 
-    return d_means, covariances, Pi
+    return covariances
 
-#==========================================================================
+def generate_P(data, k):
+    Pi = np.ones(k)/k
+    
+    return Pi
+
+#===============================================================================================================
 
 def E_step(data, k, d_means, covariances, Pi):
     N = np.shape(data)[0]
@@ -29,7 +39,7 @@ def E_step(data, k, d_means, covariances, Pi):
         gamma[n,:] = gamma[n,:]/z
     return gamma
 
-#==========================================================================
+#===============================================================================================================
 
 def M_step(data, k, gamma):
 
@@ -49,32 +59,54 @@ def M_step(data, k, gamma):
             new_cov.append(cov)
     
     return new_means, new_cov, new_Pi
+
+#===============================================================================================================
+
+def GaussianMixtureModel(data, k, threshold, iterations, init_method):
+
+    if init_method == "random":
+        means = generate_means(data, k)
+        covariances = generate_sigma(data, k)
+        Pk = generate_P(data, k)
+        print("Random initialization of parameters")
     
-#==========================================================================
-#==========================================================================
-
-def GMM(data, k, threshold, iterations):
-
-    means, covariances, Pk = generate_initial_parameters(data, k)
+    if init_method == "kmeans":
+        means, clusters_ids, score, stand_dev, conv = KMeans(data, k, "euclidean", 1e-16, 100)
+        covariances = generate_sigma(data, k)
+        Pk = generate_P(data, k)
+        print("KMeans is running to initialize parameters")
+    
+    else:
+        raise ValueError("Input Error. Init should be random or kmeans")
 
     threshold = threshold
     max_iter = iterations
-    LogLikelihood = np.zeros(max_iter)
+    LogLikelihood = []
     loglh = 0
+    error = 0
 
     for i in range(max_iter):
-        
+
         gamma = E_step(data, k, means, covariances, Pk)
 
-        LogLikelihood[i] = sum(np.log(np.max(gamma, axis=1)))
-        loglh = LogLikelihood[i]
+        loglh = sum(np.log(np.max(gamma, axis=1)))
+        LogLikelihood.append(loglh)
 
+        if loglh == LogLikelihood[i-1]:
+            error +=1
+            if error >= 2:
+                break
+        
         if loglh >= threshold:
             print("Convergence is met in round {}".format(i))
             break
 
-        means, covariancess, Pk = M_step(data, k, gamma)
+        if (i+1) == max_iter:
+            print("GaussianMixtureModel() has reached the maximum iterations")
+        
+        means, covariances, Pk = M_step(data, k, gamma)
 
-    return means, np.argmax(gamma, axis=1), loglh, LogLikelihood
+        return means, covariances, np.argmax(gamma, axis=1), loglh, LogLikelihood
 
-
+#===============================================================================================================
+#===============================================================================================================
