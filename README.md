@@ -1,9 +1,9 @@
 # ML-Algorithms
-This repository contains personal implementations for common Machine Learning algorithms, in python.
+This repository contains personal, from scratch, implementations for common Machine Learning algorithms, coded in python.
 
 ### Algorithms:
 
-1. PCA
+1. Principal Component Analysis (PCA)
 2. KMeans
 3. Mixture of Gaussians
 4. Naive Bayes
@@ -20,7 +20,7 @@ Christos Kitsoulis
 
 Where:
 
-Machine Learning course, MSc in Bioinformatics, University of Crete
+Methods in bioinformatics (Machine Learning) course, MSc in Bioinformatics, University of Crete
 
 When:
 
